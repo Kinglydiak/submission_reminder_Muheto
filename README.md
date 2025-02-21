@@ -20,7 +20,7 @@ Then, make the startup script executable and run it:
 chmod +x startup.sh
 ./startup.sh
 This will start the reminder system.
-
+ANd you're all set.
 
 
 
