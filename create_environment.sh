@@ -1,76 +1,95 @@
 #!/bin/bash
 
-echo "Enter your name: "
+# Prompt user for their name
+echo -n "Enter your name: "
 read user_name
 
-directory_name="submission_reminder_${user_name}"
+# Create main directory
+dir_name="submission_reminder_${user_name}"
+mkdir -p "$dir_name"/{config,modules,assets}
 
-mkdir -p "$directory_name/config"
-mkdir -p "$directory_name/scripts"
-mkdir -p "$directory_name/data"
-
-touch "$directory_name/config/config.env"
-touch "$directory_name/scripts/reminder.sh"
-touch "$directory_name/scripts/functions.sh"
-touch "$directory_name/startup.sh"
-touch "$directory_name/data/submissons.txt"  # Ty
-
-echo "ASSIGNMENT=\"Shell Navigation\"" > "$directory_name/config/config.env"
-echo "DAYS_REMAINING=2" >> "$directory_name/config/config.env"
-
-cat <<EOL > "$directory_name/scripts/reminder.sh"
-#!/bin/bash
-
-source "\$(dirname "\$0")/../config/config.env"
-source "\$(dirname "\$0")/functions.sh"
-
-submissions_file="\$(dirname "\$0")/../data/submissions.txt"
-
-echo "Assignment: \$ASSIGNMENT"
-echo "Days remaining to submit: \$DAYS_REMAINING days"
-echo "---------------------------------------------"  
-
-check_submissions "\$submissions_file"
+# Create and populate config.env
+cat <<EOL > "$dir_name/config/config.env"
+# This is the config file
+ASSIGNMENT="Shell Navigation"
+DAYS_REMAINING=2
 EOL
 
-cat <<EOL > "$directory_name/scripts/functions.sh"
+# Create and populate reminder.sh
+cat <<EOL > "$dir_name/reminder.sh"
 #!/bin/bash
 
+# Source environment variables and helper functions
+source ./config/config.env
+source ./modules/functions.sh
+
+# Path to the submissions file
+submissions_file="./assets/submissions.txt"
+
+# Print remaining time and run the reminder function
+echo "Assignment: $ASSIGNMENT"
+echo "Days remaining to submit: $DAYS_REMAINING days"
+echo "--------------------------------------------"
+
+check_submissions \$submissions_file
+EOL
+chmod +x "$dir_name/reminder.sh"
+
+# Create and populate functions.sh
+cat <<EOL > "$dir_name/modules/functions.sh"
+#!/bin/bash
+
+# Function to read submissions file and output students who have not submitted
 function check_submissions {
     local submissions_file=\$1
     echo "Checking submissions in \$submissions_file"
 
+    # Skip the header and iterate through the lines
     while IFS=, read -r student assignment status; do
+        # Remove leading and trailing whitespace
         student=\$(echo "\$student" | xargs)
         assignment=\$(echo "\$assignment" | xargs)
         status=\$(echo "\$status" | xargs)
 
+        # Check if assignment matches and status is 'not submitted'
         if [[ "\$assignment" == "\$ASSIGNMENT" && "\$status" == "not submitted" ]]; then
-            echo "Reminder: \$student has not submitted the \$ASSIGNMENT assignment!!"  # Extra exclamation mark
+            echo "Reminder: \$student has not submitted the \$ASSIGNMENT assignment!"
         fi
-    done < <(tail -n +2 "\$submissions_file")
+    done < <(tail -n +2 "\$submissions_file") # Skip the header
 }
 EOL
+chmod +x "$dir_name/modules/functions.sh"
 
-cat <<EOL > "$directory_name/data/submissions.txt"
-student, assignment, submission status
-Chinemerem, Shell Navigation, not submitted
-Chiagoziem, Git, submitted
-Divine, Shell Navigation, not submitted
-Anissa, Shell Basics, submitted
+# Create and populate submissions.txt
+cat <<EOL > "$dir_name/assets/submissions.txt"
+student,assignment,submission status
+Chinemerem,Shell Navigation,not submitted
+Chiagoziem,Git,submitted
+Divine,Shell Navigation,not submitted
+Anissa,Shell Basics,submitted
+John,Shell Scripting,not submitted
+Aisha,Git,submitted
+Michael,Shell Navigation,not submitted
+Sarah,Shell Scripting,submitted
+James,Shell Basics,not submitted
+Linda,Git,submitted
 EOL
 
-cat <<EOL > "$directory_name/startup.sh"
+# Create and populate startup.sh
+
+cat <<EOL > "$app_dir/startup.sh"
 #!/bin/bash
 
-echo "Starting Submission Reminder App...."  
-source "config/config.env"
-source "scripts/functions.sh"
-bash scripts/reminder.sh
+# Navigate to the app directory
+cd "\$(dirname "\$0")"
+
+# Run the reminder script
+./reminder.sh
 EOL
 
-chmod +x "$directory_name/scripts/reminder.sh"
-chmod +x "$directory_name/scripts/functions.sh"
-chmod +x "$directory_name/startup.sh"
+# Make startup.sh executable
+chmod +x "$app_dir/startup.sh"
 
-echo "Environment setup complete! Navigate to $directory_name and run ./startup.sh to start the app"  # M
+# Completion message
+echo "Environment setup complete! Navigate to $dir_name and run ./startup.sh to test the application."
+
